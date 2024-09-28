@@ -119,6 +119,31 @@
             color: black;
             text-align: right;
         }
+
+        @media (max-width: 600px) {
+
+            body,
+            html {
+                font-size: large;
+                /* Adjust font size for small screens */
+            }
+
+            #start-screen {
+                background-image: url('assets/start-background-small.png');
+                /* Change to small screen background */
+            }
+
+            #end-screen {
+                background-image: url('assets/end-background-small.png');
+                /* Change to small screen background */
+            }
+
+            #game-container {
+                width: 100%;
+                height: 100vh;
+                /* Full viewport height */
+            }
+        }
     </style>
 </head>
 
@@ -226,6 +251,16 @@
                 this.riverArea = new Phaser.Geom.Rectangle(0, 100, 800, 400);
 
                 this.physics.add.collider(this.raft, this.riverArea, this.preventRaftMovement, null, this);
+
+                if (window.innerWidth <= 600) {
+                    this.startBackground = 'assets/start-background-small.png'; // Set small screen background
+                    this.endBackground = 'assets/end-background-small.png'; // Set small screen background
+                } else {
+                    this.startBackground = 'assets/background.png'; // Set default background
+                    this.endBackground = 'assets/end-background.png'; // Set default background
+                }
+                document.getElementById('start-screen').style.backgroundImage = `url('${this.startBackground}')`;
+                document.getElementById('end-screen').style.backgroundImage = `url('${this.endBackground}')`;
             }
 
             preventRaftMovement(raft, area) {
