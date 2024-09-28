@@ -169,6 +169,7 @@
                 this.gameOver = false;
                 this.totalCoins = 0;
                 this.river = null;
+                this.obstacleEvent = null; // Store the obstacle event
             }
 
             preload() {
@@ -189,7 +190,6 @@
                 this.raft.setCollideWorldBounds(true);
                 this.raft.setScale(0.2);
 
-
                 this.obstacles = this.physics.add.group();
                 this.powerUps = this.physics.add.group();
                 this.coins = this.physics.add.group();
@@ -200,8 +200,8 @@
                 this.physics.add.overlap(this.raft, this.powerUps, this.collectPowerUp, null, this);
                 this.physics.add.overlap(this.raft, this.coins, this.collectCoin, null, this);
 
-                this.time.addEvent({
-                    delay: 2000,
+                this.obstacleEvent = this.time.addEvent({
+                    delay: 2000, // Initial delay
                     callback: this.generateObstacle,
                     callbackScope: this,
                     loop: true
@@ -226,6 +226,9 @@
                 this.riverArea = new Phaser.Geom.Rectangle(0, 100, 800, 400);
 
                 this.physics.add.collider(this.raft, this.riverArea, this.preventRaftMovement, null, this);
+
+                // Add device motion event listener
+                window.addEventListener('devicemotion', this.handleDeviceMotion.bind(this));
             }
 
             preventRaftMovement(raft, area) {
@@ -235,6 +238,7 @@
             update() {
                 if (this.gameOver) return;
 
+                // Handle keyboard input for desktop
                 if (this.cursors.left.isDown) {
                     this.raft.setVelocityX(-200);
                 } else if (this.cursors.right.isDown) {
@@ -277,6 +281,15 @@
                     this.endGame();
                 }
 
+                // Adjust obstacle generation frequency based on distance
+                if (this.distance >= 50 && this.distance < 100) {
+                    this.obstacleEvent.delay = 1500; // Increase frequency
+                } else if (this.distance >= 100 && this.distance < 150) {
+                    this.obstacleEvent.delay = 1000; // Further increase frequency
+                } else if (this.distance >= 150) {
+                    this.obstacleEvent.delay = 800; // Maximum frequency
+                }
+
                 if (this.distance >= 50 && this.distance < 100 && this.riverSpeed === 2) {
                     this.riverSpeed = 3;
                 } else if (this.distance >= 100 && this.distance < 150 && this.riverSpeed === 3) {
@@ -299,6 +312,11 @@
                 const obstacleType = Math.random() < 0.5 ? 'rock' : 'tree';
                 const obstacle = this.obstacles.create(x, -50, obstacleType);
                 obstacle.setScale(0.25);
+
+                // Check for overlap with existing obstacles
+                this.physics.add.overlap(obstacle, this.obstacles, (newObstacle, existingObstacle) => {
+                    newObstacle.destroy(); // Destroy if overlapping
+                }, null, this);
             }
 
             generatePowerUp() {
@@ -306,6 +324,11 @@
                 const powerUpType = Math.random() < 0.5 ? 'speedBoost' : 'shield';
                 const powerUp = this.powerUps.create(x, -50, powerUpType);
                 powerUp.setScale(0.1);
+
+                // Check for overlap with existing power-ups
+                this.physics.add.overlap(powerUp, this.powerUps, (newPowerUp, existingPowerUp) => {
+                    newPowerUp.destroy(); // Destroy if overlapping
+                }, null, this);
             }
 
             generateCoin() {
@@ -363,6 +386,19 @@
                     highDistance = this.distance;
                 }
                 document.getElementById('high-distance').textContent = `Best Distance: ${Math.floor(highDistance)}m`;
+            }
+
+            // New method to handle device motion
+            handleDeviceMotion(event) {
+                const x = event.accelerationIncludingGravity.x;
+
+                if (x < -1) {
+                    this.raft.setVelocityX(-200); // Move left
+                } else if (x > 1) {
+                    this.raft.setVelocityX(200); // Move right
+                } else {
+                    this.raft.setVelocityX(0); // Stop
+                }
             }
         }
 
